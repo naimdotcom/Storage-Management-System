@@ -1,3 +1,4 @@
+const { SendMail } = require("../lib/nodemailer");
 const User = require("../Model/user.model");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -37,7 +38,11 @@ const signup = async (req, res) => {
     }
 
     // send otp to user
-
+    const mail = await SendMail(
+      otpTemplate(otp),
+      email,
+      "Email Verification Code"
+    );
     return res
       .status(200)
       .json(new ApiResponse(200, "User created successfully"));
