@@ -143,4 +143,4 @@ const verifyOtp = async (req, res) => {
   }
 };
 
-module.exports = { signup, login };
+module.exports = { signup, login, verifyOtp };
