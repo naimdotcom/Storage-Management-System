@@ -7,8 +7,8 @@ const {
 const { verifyAuth } = require("../../middleware/auth.middleware");
 const _ = express.Router();
 
-_.use("/signup", signup);
-_.use("/login", login);
-_.use("/otp", verifyAuth, verifyOtp);
+_.route("/signup").post(signup);
+_.route("/login").post(login);
+_.route("/verify-otp").post(verifyAuth, verifyOtp);
 
 module.exports = _;
