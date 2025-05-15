@@ -23,12 +23,21 @@ const signup = async (req, res) => {
           new ApiError(400, "User already exist with this email or username")
         );
     }
+    const { otp, expiry } = otpGenerator();
     const user = await User.create({
       username,
       email,
       password,
       termsAndConditions: terms,
+      otp: otp,
+      otpExpiry: expiry,
     });
+    if (!user) {
+      return res.status(500).json(new ApiError(500, "Internal Server Error"));
+    }
+
+    // send otp to user
+
     return res
       .status(200)
       .json(new ApiResponse(200, "User created successfully"));
