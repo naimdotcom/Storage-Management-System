@@ -22,3 +22,5 @@ const otpTemplate = (CODE) => {
   </div>
 </div>`;
 };
+
+module.exports = { otpTemplate };
