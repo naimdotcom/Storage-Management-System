@@ -42,7 +42,7 @@ const signup = async (req, res) => {
       return res.status(500).json(new ApiError(500, "Internal Server Error"));
     }
 
-    const token = generateToken({ id: user._id }, "6m");
+    const token = generateToken({ email: user.email }, "1d");
 
     // send otp to user
     const mail = await SendMail(
@@ -53,7 +53,7 @@ const signup = async (req, res) => {
 
     return res
       .status(200)
-      .cookie("tempToken", token, {})
+      .cookie("token", token, {})
       .json(
         new ApiResponse(200, "User created successfully", {
           token: `Bearer ${token}`,
@@ -88,7 +88,7 @@ const login = async (req, res) => {
         email,
         "Email Verification Code"
       );
-      const tempToken = generateToken({ id: user._id }, "6m");
+      const tempToken = generateToken({ email: user.email }, "1h");
       return res.status(400).json(
         new ApiError(400, "Please verify your account", {
           redirect: "/otp",
@@ -121,7 +121,12 @@ const login = async (req, res) => {
 
     return res
       .status(200)
-      .cookie("token", token, {})
+      .cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        maxAge: 10 * 24 * 60 * 60 * 1000,
+      })
       .json(
         new ApiResponse(200, "User logged in successfully", {
           token: `Bearer ${token}`,
@@ -139,20 +144,28 @@ const verifyOtp = async (req, res) => {
     const { otp } = req.body;
     const user = req.user;
     if (!otp) {
-      return res.status(400).json(new ApiError(400, "Please enter otp"));
+      return res
+        .status(400)
+        .json(new ApiError(400, "Please enter otp", { success: false }));
     }
 
     const userFound = await User.findById(user.id);
     if (!userFound) {
-      return res.status(400).json(new ApiError(400, "User not found"));
+      return res
+        .status(400)
+        .json(new ApiError(400, "User not found", { success: false }));
     }
 
     if (userFound.otpExpiry < Date.now()) {
-      return res.status(400).json(new ApiError(400, "Otp expired"));
+      return res
+        .status(400)
+        .json(new ApiError(400, "Otp expired", { success: false }));
     }
 
     if (userFound.otp !== otp) {
-      return res.status(400).json(new ApiError(400, "Invalid otp"));
+      return res
+        .status(400)
+        .json(new ApiError(400, "Invalid otp", { success: false }));
     }
 
     userFound.isVerified = true;
@@ -162,7 +175,7 @@ const verifyOtp = async (req, res) => {
 
     return res.status(200).json(
       new ApiResponse(200, "User verified successfully", {
-        redirect: "/login",
+        success: true,
       })
     );
   } catch (error) {
@@ -171,4 +184,132 @@ const verifyOtp = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, verifyOtp };
+const resendOtp = async (req, res) => {
+  try {
+    const user = req.user;
+    const userFound = await User.findById(user.id);
+    if (!userFound) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "User not found", { success: false }));
+    }
+
+    const { otp, expiry } = otpGenerator();
+    userFound.otp = otp;
+    userFound.otpExpiry = expiry;
+    await userFound.save();
+    const token = generateToken({ id: userFound._id }, "1h");
+
+    const mail = await SendMail(
+      otpTemplate(otp),
+      userFound.email,
+      "Email Verification Code"
+    );
+    return res
+      .status(200)
+      .cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        maxAge: 60 * 60 * 1000, // 1 hour
+      })
+      .json(
+        new ApiResponse(200, "Otp sent successfully", {
+          redirect: "/otp",
+          token: `Bearer ${token}`,
+          success: true,
+        })
+      );
+  } catch (error) {
+    console.log("error from resendOtp", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json(new ApiError(400, "Please enter email"));
+    }
+    const FindUser = await User.findOne({ email });
+    if (!FindUser) {
+      return res.status(400).json(new ApiError(400, "User not found"));
+    }
+    const date = new Date();
+    const ForgotPassWordExpiry = new Date(date.getTime() + 60 * 60 * 1000); // Expiry in 1 hour from now
+
+    FindUser.resetPasswordExpires = ForgotPassWordExpiry;
+    const { otp, expiry } = otpGenerator();
+    FindUser.otp = otp;
+    FindUser.otpExpiry = expiry;
+    await FindUser.save();
+    const token = generateToken({ email: FindUser.email }, "1d");
+    const mail = await SendMail(
+      otpTemplate(otp),
+      FindUser.email,
+      "Email Verification Code"
+    );
+
+    return res.status(200).json(
+      new ApiResponse(200, "Otp sent successfully", {
+        redirect: "/otp",
+        token: `Bearer ${token}`,
+      })
+    );
+  } catch (error) {
+    console.log("error from forgotPassword", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { newPassword, confirmPassword } = req.body;
+    if (!newPassword || !confirmPassword) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "Please enter password", { success: false }));
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "Password not matched", { success: false }));
+    }
+
+    const user = req.user;
+    const userFound = await User.findById(user.id);
+    if (!userFound) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "User not found", { success: false }));
+    }
+    if (userFound.resetPasswordExpires < new Date()) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "Link expired", { success: false }));
+    }
+
+    const passwordHashed = await hashPassword(newPassword);
+    userFound.password = passwordHashed;
+    await userFound.save();
+    return res.status(200).json(
+      new ApiResponse(200, "Password reset successfully", {
+        success: true,
+      })
+    );
+  } catch (error) {
+    console.log("error from resetPassword", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+module.exports = {
+  signup,
+  login,
+  verifyOtp,
+  resendOtp,
+  forgotPassword,
+  resetPassword,
+};

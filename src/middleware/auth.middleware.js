@@ -2,9 +2,8 @@ const { verifyToken } = require("../lib/Jwt");
 
 const verifyAuth = async (req, res, next) => {
   const authHeader = req.headers["authorization"];
-  const cookie = req.cookies.cookie;
+  const cookie = req.headers.cookie;
 
-  console.log("authHeader", authHeader, cookie);
   try {
     if (!authHeader && !cookie) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -15,7 +14,9 @@ const verifyAuth = async (req, res, next) => {
       const decoded = verifyToken(token);
       req.user = decoded;
     } else if (cookie) {
-      const decoded = verifyToken(cookie);
+      const tokenRegx = /(?<=token=)[\w-]+\.[\w-]+\.[\w-]+/;
+      const token = cookie.match(tokenRegx)[0];
+      const decoded = verifyToken(token);
       req.user = decoded;
     }
 

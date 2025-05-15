@@ -5,7 +5,12 @@ const generateToken = (payload, time) => {
 };
 
 const verifyToken = (token) => {
-  return jwt.verify(token, process.env.JWT_SECRET);
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    console.log("error from verifyToken", error);
+    return null;
+  }
 };
 
 module.exports = { generateToken, verifyToken };
