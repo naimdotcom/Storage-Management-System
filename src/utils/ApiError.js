@@ -1,4 +1,4 @@
-class apiError {
+class ApiError {
   constructor(
     statusCode = 400,
     message = "default",
@@ -13,4 +13,4 @@ class apiError {
   }
 }
 
-module.exports = apiError;
+module.exports = ApiError;
