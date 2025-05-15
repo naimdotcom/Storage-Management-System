@@ -137,6 +137,34 @@ const login = async (req, res) => {
 const verifyOtp = async (req, res) => {
   try {
     const { otp } = req.body;
+    const user = req.user;
+    if (!otp) {
+      return res.status(400).json(new ApiError(400, "Please enter otp"));
+    }
+
+    const userFound = await User.findById(user.id);
+    if (!userFound) {
+      return res.status(400).json(new ApiError(400, "User not found"));
+    }
+
+    if (userFound.otpExpiry < Date.now()) {
+      return res.status(400).json(new ApiError(400, "Otp expired"));
+    }
+
+    if (userFound.otp !== otp) {
+      return res.status(400).json(new ApiError(400, "Invalid otp"));
+    }
+
+    userFound.isVerified = true;
+    userFound.otp = null;
+    userFound.otpExpiry = null;
+    await userFound.save();
+
+    return res.status(200).json(
+      new ApiResponse(200, "User verified successfully", {
+        redirect: "/login",
+      })
+    );
   } catch (error) {
     console.log("error from verifyOtp", error);
     res.status(500).json({ message: "Internal Server Error" });
