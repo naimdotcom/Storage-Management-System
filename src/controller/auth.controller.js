@@ -37,17 +37,40 @@ const signup = async (req, res) => {
       return res.status(500).json(new ApiError(500, "Internal Server Error"));
     }
 
+    const token = jwt.sign(
+      { id: user._id.toString() },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "6m",
+      }
+    );
+
     // send otp to user
     const mail = await SendMail(
       otpTemplate(otp),
       email,
       "Email Verification Code"
     );
+
     return res
       .status(200)
-      .json(new ApiResponse(200, "User created successfully"));
+      .cookie("tempToken", token, {})
+      .json(
+        new ApiResponse(200, "User created successfully", {
+          tempToken: `Bearer ${token}`,
+        })
+      );
   } catch (error) {
     console.log("error from signup", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+  } catch (error) {
+    console.log("error from login", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
