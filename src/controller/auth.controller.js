@@ -1,4 +1,4 @@
-const { hashPassword } = require("../lib/bcrypt");
+const { hashPassword, comparePassword } = require("../lib/bcrypt");
 const { generateToken } = require("../lib/Jwt");
 const { SendMail } = require("../lib/nodemailer");
 const User = require("../Model/user.model");
@@ -56,7 +56,7 @@ const signup = async (req, res) => {
       .cookie("tempToken", token, {})
       .json(
         new ApiResponse(200, "User created successfully", {
-          tempToken: `Bearer ${token}`,
+          token: `Bearer ${token}`,
           redirect: "/otp",
         })
       );
@@ -88,9 +88,11 @@ const login = async (req, res) => {
         email,
         "Email Verification Code"
       );
+      const tempToken = generateToken({ id: user._id }, "6m");
       return res.status(400).json(
         new ApiError(400, "Please verify your account", {
           redirect: "/otp",
+          token: `Bearer ${tempToken}`,
         })
       );
     }
@@ -132,4 +134,13 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { signup };
+const verifyOtp = async (req, res) => {
+  try {
+    const { otp } = req.body;
+  } catch (error) {
+    console.log("error from verifyOtp", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+module.exports = { signup, login };
