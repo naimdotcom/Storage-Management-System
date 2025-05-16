@@ -63,6 +63,14 @@ const storageSchema = new Schema(
       type: Number,
       default: 0,
     },
+    otherItem: {
+      type: Number,
+      default: 0,
+    },
+    otherStorage: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

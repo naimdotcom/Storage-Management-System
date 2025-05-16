@@ -1,6 +1,7 @@
 const { bucket } = require("../config/firebase");
 const { File } = require("../Model/file.model");
 const fs = require("fs");
+const Storage = require("../Model/storage.model");
 const uploadFile = async (req, res) => {
   try {
     const { parentId } = req.body;
@@ -45,6 +46,18 @@ const uploadFile = async (req, res) => {
       fileSize: file.size,
       url: url,
     });
+
+    const updateStorageSummary = await Storage.findOneAndUpdate(
+      {
+        userId: user._id,
+      },
+      {
+        $inc: {
+          usedStorage: file.size,
+        },
+      },
+      { new: true }
+    );
 
     return res.status(200).json(
       new ApiResponse(200, "File created successfully", {

@@ -158,7 +158,7 @@ const verifyOtp = async (req, res) => {
         .json(new ApiError(400, "Please enter otp", { success: false }));
     }
 
-    const userFound = await User.findById(user.id);
+    const userFound = await User.findOne({ email: user.email });
     if (!userFound) {
       return res
         .status(400)
