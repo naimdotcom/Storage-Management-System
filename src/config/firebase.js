@@ -1,18 +1,12 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+const admin = require("firebase-admin");
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: process.env.APIKEY,
-  authDomain: process.env.AUTH_DOMAIN,
-  databaseURL: process.env.DATABSE_URL,
-  projectId: process.env.PROJECT_ID,
-  storageBucket: process.env.STORAGE_BUCKET,
-  messagingSenderId: process.env.MESSAGING_SENDER_ID,
-  appId: process.env.APP_ID,
-};
+const serviceAccount = require("./fir-blog-7b79b-firebase-adminsdk-f4omq-dfdf4035ab.json");
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: process.env.DATABASE_URL,
+});
+
+const bucket = admin.storage().bucket();
+
+module.exports = { admin, bucket };

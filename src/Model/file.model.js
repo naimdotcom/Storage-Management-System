@@ -6,6 +6,7 @@ const fileSchema = new Schema(
     ownerId: {
       type: String,
       required: true,
+      index: true,
     },
     type: {
       type: String,
@@ -19,6 +20,7 @@ const fileSchema = new Schema(
     parentId: {
       type: String,
       required: true,
+      index: true,
     },
     mimeType: {
       type: String,
