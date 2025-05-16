@@ -6,6 +6,7 @@ const {
   forgotPassword,
   resetPassword,
   resendOtp,
+  userAuth,
 } = require("../../controller/auth.controller");
 const { verifyAuth } = require("../../middleware/auth.middleware");
 const _ = express.Router();
@@ -16,5 +17,6 @@ _.route("/verify-otp").post(verifyAuth, verifyOtp);
 _.route("/resend-otp").post(verifyAuth, resendOtp);
 _.route("/forgot-password").post(verifyAuth, forgotPassword);
 _.route("/reset-password").post(verifyAuth, resetPassword);
+_.route("/user").post(verifyAuth, userAuth);
 
 module.exports = _;

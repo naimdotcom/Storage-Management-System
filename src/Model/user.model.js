@@ -15,6 +15,10 @@ const userSchema = new Schema(
       index: true,
       unique: true,
     },
+    profile: {
+      type: String,
+      default: null,
+    },
     password: {
       type: String,
       required: true,

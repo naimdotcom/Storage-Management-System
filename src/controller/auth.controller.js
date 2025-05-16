@@ -1,6 +1,7 @@
 const { hashPassword, comparePassword } = require("../lib/bcrypt");
 const { generateToken } = require("../lib/Jwt");
 const { SendMail } = require("../lib/nodemailer");
+const Storage = require("../Model/storage.model");
 const User = require("../Model/user.model");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -39,6 +40,14 @@ const signup = async (req, res) => {
       otpExpiry: expiry,
     });
     if (!user) {
+      return res.status(500).json(new ApiError(500, "Internal Server Error"));
+    }
+
+    const createStorageForUser = await Storage.create({
+      userId: user._id,
+      totalStorage: 16113868800, // 15GB in bytes = 15 * 1024 * 1024 * 1024
+    });
+    if (!createStorageForUser) {
       return res.status(500).json(new ApiError(500, "Internal Server Error"));
     }
 
@@ -305,6 +314,29 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const userAuth = async (req, res) => {
+  try {
+    const user = req.user;
+    const userFound = await User.findById(user.id).select(
+      "-password -otp -otpExpiry -resetPasswordExpires -termsAndConditions"
+    );
+    if (!userFound) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "User not found", { success: false }));
+    }
+    return res.status(200).json(
+      new ApiResponse(200, "User found", {
+        success: true,
+        user: userFound,
+      })
+    );
+  } catch (error) {
+    console.log("error from userAuth", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   signup,
   login,
@@ -312,4 +344,5 @@ module.exports = {
   resendOtp,
   forgotPassword,
   resetPassword,
+  userAuth,
 };
