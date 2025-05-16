@@ -14,9 +14,9 @@ const _ = express.Router();
 _.route("/signup").post(signup);
 _.route("/login").post(login);
 _.route("/verify-otp").post(verifyAuth, verifyOtp);
-_.route("/resend-otp").post(verifyAuth, resendOtp);
+_.route("/resend-otp").get(verifyAuth, resendOtp);
 _.route("/forgot-password").post(verifyAuth, forgotPassword);
 _.route("/reset-password").post(verifyAuth, resetPassword);
-_.route("/user").post(verifyAuth, userAuth);
+_.route("/user").get(verifyAuth, userAuth);
 
 module.exports = _;
