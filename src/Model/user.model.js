@@ -35,6 +35,14 @@ const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    rootFolderId: {
+      type: Schema.Types.ObjectId,
+      ref: "File",
+    },
+    storageId: {
+      type: Schema.Types.ObjectId,
+      ref: "Storage",
+    },
     termsAndConditions: {
       type: Boolean,
       default: false,

@@ -1,6 +1,7 @@
 const { hashPassword, comparePassword } = require("../lib/bcrypt");
 const { generateToken } = require("../lib/Jwt");
 const { SendMail } = require("../lib/nodemailer");
+const { File } = require("../Model/file.model");
 const Storage = require("../Model/storage.model");
 const User = require("../Model/user.model");
 const ApiError = require("../utils/ApiError");
@@ -47,9 +48,22 @@ const signup = async (req, res) => {
       userId: user._id,
       totalStorage: 16113868800, // 15GB in bytes = 15 * 1024 * 1024 * 1024
     });
-    if (!createStorageForUser) {
+    const createRootFolder = await File.create({
+      ownerId: user._id,
+      fileName: "root",
+      fileSize: 0,
+      type: "folder",
+      parentId: null,
+      isRoot: true,
+      mimeType: "folder",
+    });
+    if (!createStorageForUser || !createRootFolder) {
       return res.status(500).json(new ApiError(500, "Internal Server Error"));
     }
+
+    user.rootFolderId = createRootFolder._id;
+    user.storageId = createStorageForUser._id;
+    await user.save();
 
     const token = generateToken({ email: user.email }, "1d");
 
@@ -325,6 +339,9 @@ const userAuth = async (req, res) => {
         .status(400)
         .json(new ApiError(400, "User not found", { success: false }));
     }
+
+    // todo: if user not verified then send otp and other process
+
     return res.status(200).json(
       new ApiResponse(200, "User found", {
         success: true,

@@ -18,11 +18,13 @@ const fileSchema = new Schema(
       required: true,
     },
     parentId: {
-      type: Schema.Types.ObjectId,
-      required: true,
+      type: Schema.Types.ObjectId || null,
       ref: "File",
       index: true,
       default: null,
+      required: function () {
+        return !this.isRoot;
+      },
     },
     mimeType: {
       type: String,
@@ -31,10 +33,11 @@ const fileSchema = new Schema(
     fileSize: {
       type: Number,
       required: true,
+      default: 0,
     },
     fileUrl: {
       type: String,
-      required: true,
+      default: null,
     },
     isDeleted: {
       type: Boolean,
@@ -43,6 +46,10 @@ const fileSchema = new Schema(
     deletedAt: {
       type: Date,
       default: null,
+    },
+    isRoot: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
