@@ -18,9 +18,11 @@ const fileSchema = new Schema(
       required: true,
     },
     parentId: {
-      type: String,
+      type: Schema.Types.ObjectId,
       required: true,
+      ref: "File",
       index: true,
+      default: null,
     },
     mimeType: {
       type: String,
