@@ -4,9 +4,8 @@ const fs = require("fs");
 const Storage = require("../Model/storage.model");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
-const { isObjectIdOrHexString } = require("mongoose");
+
 const uploadFile = async (req, res) => {
-  console.log("req.file", req.file);
   try {
     const { parentId } = req.body;
     const file = req.file;
@@ -25,7 +24,9 @@ const uploadFile = async (req, res) => {
         .status(400)
         .json(new ApiError(400, "Folder deleted", { success: false }));
 
-    const destinationPath = `user_files/${user._id}/${req.file.filename}`;
+    const destinationPath = `user_files/${user.id ? user.id : "unknown"}/${
+      req.file.filename
+    }`;
 
     await bucket.upload(file.path, {
       destination: destinationPath,
@@ -39,7 +40,6 @@ const uploadFile = async (req, res) => {
       expires: "03-09-2491",
     });
 
-    fs.unlinkSync(file.path);
     const mimeType = file.mimetype;
     const fileSize = file.size;
 
@@ -47,13 +47,13 @@ const uploadFile = async (req, res) => {
     console.log("fileSize", fileSize);
 
     const fileCreated = await File.create({
-      ownerId: user._id,
+      ownerId: user.id,
       type: "file",
       fileName: req.file.originalname,
       parentId: parentId,
       mimeType: mimeType,
       fileSize: fileSize,
-      url: url,
+      fileUrl: url,
     });
 
     let updateFields = {
@@ -87,6 +87,10 @@ const uploadFile = async (req, res) => {
       { new: true }
     );
 
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(file.path);
+    }
+
     return res.status(200).json(
       new ApiResponse(200, "File created successfully", {
         success: true,
@@ -98,16 +102,67 @@ const uploadFile = async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
     console.log("error from createFile", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json(new ApiResponse(500, "Internal Server Error"));
   }
 };
 
-const createFolder = async (req, res) => {};
+const createFolder = async (req, res) => {
+  try {
+    const { parentId } = req.body;
+    const user = req.user;
+    if (!parentId) {
+      return res.status(400).json(new ApiError(400, "Please enter parentId"));
+    }
 
-const deleteFile = async (req, res) => {};
+    const isFolderExist = await File.findById(parentId);
+    if (!isFolderExist)
+      return res
+        .status(400)
+        .json(new ApiError(400, "Folder not found", { success: false }));
+    if (isFolderExist.type !== "folder" || isFolderExist.isDeleted)
+      return res
+        .status(400)
+        .json(new ApiError(400, "Folder deleted", { success: false }));
+
+    const folderCreated = await File.create({
+      ownerId: user.id,
+      type: "folder",
+      parentId: parentId,
+      mimeType: "folder",
+      fileSize: 0,
+    });
+
+    if (!folderCreated) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "Folder not created", { success: false }));
+    }
+
+    return res.status(201).json(
+      new ApiResponse(201, "Folder created successfully", {
+        success: true,
+        folder: folderCreated,
+      })
+    );
+  } catch (error) {
+    console.log("error from createFolder", error);
+    res.status(500).json(new ApiResponse(500, "Internal Server Error"));
+  }
+};
+
+const deleteFile = async (req, res) => {
+  try {
+  } catch (error) {
+    console.log("error from deleteFile", error);
+    res.status(500).json(new ApiResponse(500, "Internal Server Error"));
+  }
+};
 
 const renameFile = async (req, res) => {};
 
 module.exports = {
   uploadFile,
+  createFolder,
+  deleteFile,
+  renameFile,
 };

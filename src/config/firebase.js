@@ -4,7 +4,7 @@ const serviceAccount = require("./fir-blog-7b79b-firebase-adminsdk-f4omq-dfdf403
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  storageBucket: process.env.DATABASE_URL,
+  storageBucket: process.env.STORAGE_BUCKET,
 });
 
 const bucket = admin.storage().bucket();
