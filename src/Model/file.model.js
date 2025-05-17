@@ -13,7 +13,7 @@ const fileSchema = new Schema(
       required: true,
       enum: ["file", "folder"],
     },
-    fileName: {
+    name: {
       type: String,
       required: true,
     },
@@ -30,7 +30,7 @@ const fileSchema = new Schema(
       type: String,
       required: true,
     },
-    fileSize: {
+    size: {
       type: Number,
       required: true,
       default: 0,
@@ -47,7 +47,7 @@ const fileSchema = new Schema(
       type: Date,
       default: null,
     },
-    isRoot: {
+    isRootFolder: {
       type: Boolean,
       default: false,
     },

@@ -7,14 +7,14 @@ const ApiResponse = require("../utils/ApiResponse");
 
 const uploadFile = async (req, res) => {
   try {
-    const { parentId } = req.body;
+    const { id } = req.params;
     const file = req.file;
     const user = req.user;
-    if (!file || !parentId) {
+    if (!file || !id) {
       return res.status(400).json(new ApiError(400, "Please enter file"));
     }
 
-    const isFolderExist = await File.findById(parentId);
+    const isFolderExist = await File.findById(id);
     if (!isFolderExist)
       return res
         .status(400)
@@ -49,10 +49,10 @@ const uploadFile = async (req, res) => {
     const fileCreated = await File.create({
       ownerId: user.id,
       type: "file",
-      fileName: req.file.originalname,
-      parentId: parentId,
+      name: req.file.originalname,
+      parentId: id,
       mimeType: mimeType,
-      fileSize: fileSize,
+      size: fileSize,
       fileUrl: url,
     });
 
@@ -108,7 +108,8 @@ const uploadFile = async (req, res) => {
 
 const createFolder = async (req, res) => {
   try {
-    const { parentId } = req.body;
+    const { parentId, fileName } = req.body;
+    console.log("parentId", parentId, req.body);
     const user = req.user;
     if (!parentId) {
       return res.status(400).json(new ApiError(400, "Please enter parentId"));
@@ -126,10 +127,11 @@ const createFolder = async (req, res) => {
 
     const folderCreated = await File.create({
       ownerId: user.id,
+      name: fileName ? fileName : "New Folder",
       type: "folder",
       parentId: parentId,
       mimeType: "folder",
-      fileSize: 0,
+      size: 0,
     });
 
     if (!folderCreated) {
@@ -150,6 +152,77 @@ const createFolder = async (req, res) => {
   }
 };
 
+const getFolderFiles = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    if (!id) {
+      return res.status(400).json(new ApiError(400, "Please enter parentId"));
+    }
+
+    const isFolderExist = await File.findById(id);
+    if (!isFolderExist)
+      return res
+        .status(400)
+        .json(new ApiError(400, "Folder not found", { success: false }));
+    if (isFolderExist.isDeleted)
+      return res
+        .status(400)
+        .json(new ApiError(400, "Folder deleted", { success: false }));
+    if (isFolderExist.type !== "folder")
+      return res
+        .status(400)
+        .json(new ApiError(400, "Not a folder", { success: false }));
+
+    const files = await File.find({
+      ownerId: user.id,
+      parentId: id,
+      isDeleted: false,
+    }).select("-__v");
+
+    return res.status(200).json(
+      new ApiResponse(200, "Files found", {
+        success: true,
+        files: files,
+      })
+    );
+  } catch (error) {
+    console.log("error from getFolderFiles", error);
+    res.status(500).json(new ApiResponse(500, "Internal Server Error"));
+  }
+};
+
+const getFile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    if (!id) {
+      return res.status(400).json(new ApiError(400, "Please enter fileId"));
+    }
+
+    const file = await File.findOne({
+      ownerId: user.id,
+      _id: id,
+      isDeleted: false,
+    });
+    if (!file) {
+      return res.status(400).json(new ApiError(400, "File not found"));
+    }
+
+    return res.status(200).json(
+      new ApiResponse(200, "File found", {
+        success: true,
+        file: file,
+      })
+    );
+  } catch (error) {
+    console.log("error from getFile", error);
+    res.status(500).json(new ApiResponse(500, "Internal Server Error"));
+  }
+};
+
 const deleteFile = async (req, res) => {
   try {
   } catch (error) {
@@ -165,4 +238,6 @@ module.exports = {
   createFolder,
   deleteFile,
   renameFile,
+  getFolderFiles,
+  getFile,
 };

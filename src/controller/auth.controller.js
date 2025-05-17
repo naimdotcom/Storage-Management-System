@@ -50,11 +50,11 @@ const signup = async (req, res) => {
     });
     const createRootFolder = await File.create({
       ownerId: user._id,
-      fileName: "root",
-      fileSize: 0,
+      name: "root",
+      size: 0,
       type: "folder",
       parentId: null,
-      isRoot: true,
+      isRootFolder: true,
       mimeType: "folder",
     });
     if (!createStorageForUser || !createRootFolder) {
