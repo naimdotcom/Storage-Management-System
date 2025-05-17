@@ -5,9 +5,15 @@ const {
   createFolder,
   getFolderFiles,
   getFile,
+  deleteFileOrFolder,
+  renameFileOrFolder,
 } = require("../../controller/file.controller");
 const upload = require("../../middleware/multer.middleware");
 const _ = express.Router();
+
+_.route("/:id")
+  .delete(verifyAuth, deleteFileOrFolder)
+  .put(verifyAuth, renameFileOrFolder);
 
 _.route("/:id/upload").post(verifyAuth, upload.single("file"), uploadFile);
 

@@ -223,21 +223,92 @@ const getFile = async (req, res) => {
   }
 };
 
-const deleteFile = async (req, res) => {
+const deleteFileOrFolder = async (req, res) => {
   try {
+    const { id } = req.params;
+    const user = req.user;
+
+    if (!id) {
+      return res.status(400).json(new ApiError(400, "Please enter fileId"));
+    }
+
+    const file = await File.findOneAndUpdate(
+      {
+        ownerId: user.id,
+        _id: id,
+        isDeleted: false,
+      },
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      {
+        new: true,
+      }
+    );
+    if (!file) {
+      return res.status(400).json(new ApiError(400, "File not found"));
+    }
+
+    return res.status(200).json(
+      new ApiResponse(200, "File deleted", {
+        success: true,
+        file: file,
+      })
+    );
   } catch (error) {
     console.log("error from deleteFile", error);
     res.status(500).json(new ApiResponse(500, "Internal Server Error"));
   }
 };
 
-const renameFile = async (req, res) => {};
+const renameFileOrFolder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    const user = req.user;
+
+    if (!id) {
+      return res.status(400).json(new ApiError(400, "Please enter fileId"));
+    }
+    if (!name) {
+      return res.status(400).json(new ApiError(400, "Please enter name"));
+    }
+
+    const file = await File.findOneAndUpdate(
+      {
+        ownerId: user.id,
+        _id: id,
+        isDeleted: false,
+      },
+      {
+        name: name,
+      },
+      {
+        new: true,
+      }
+    );
+    if (!file) {
+      return res.status(400).json(new ApiError(400, "File not found"));
+    }
+
+    return res.status(200).json(
+      new ApiResponse(200, "File renamed", {
+        success: true,
+        file: file,
+      })
+    );
+  } catch (error) {
+    console.log("error from renameFile", error);
+    res.status(500).json(new ApiResponse(500, "Internal Server Error"));
+  }
+};
 
 module.exports = {
   uploadFile,
   createFolder,
-  deleteFile,
-  renameFile,
+  deleteFileOrFolder,
+  renameFileOrFolder,
   getFolderFiles,
   getFile,
 };
