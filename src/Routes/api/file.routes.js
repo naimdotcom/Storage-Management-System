@@ -8,7 +8,6 @@ const {
   deleteFileOrFolder,
   renameFileOrFolder,
   getMimeTypeFiles,
-  addToFavoriteFileOrFolder,
   updateFavoriteFileOrFolder,
 } = require("../../controller/file.controller");
 const upload = require("../../middleware/multer.middleware");
