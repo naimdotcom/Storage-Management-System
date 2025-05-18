@@ -354,6 +354,30 @@ const userAuth = async (req, res) => {
   }
 };
 
+const renameUserName = async (req, res) => {
+  try {
+    const { username } = req.body;
+    const user = req.user;
+    const userFound = await User.findById(user.id);
+    if (!userFound) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "User not found", { success: false }));
+    }
+    userFound.username = username;
+    await userFound.save();
+    return res.status(200).json(
+      new ApiResponse(200, "User found", {
+        success: true,
+        user: userFound,
+      })
+    );
+  } catch (error) {
+    console.log("error from userAuth", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   signup,
   login,
@@ -362,4 +386,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   userAuth,
+  renameUserName,
 };

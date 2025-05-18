@@ -15,13 +15,19 @@ const userSchema = new Schema(
       index: true,
       unique: true,
     },
-    profile: {
+    googleId: {
+      type: String,
+      default: null,
+    },
+    profilePicture: {
       type: String,
       default: null,
     },
     password: {
       type: String,
-      required: true,
+      required: function () {
+        return !this.googleId;
+      },
     },
     otp: {
       type: Number,
