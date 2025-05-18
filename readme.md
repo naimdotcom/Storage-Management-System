@@ -1,45 +1,91 @@
-# Storage Management System
+# Storage Management System
 
-A full‑stack cloud‑storage backend built with **Node.js, Express 5, MongoDB, Firebase Cloud Storage, and JWT**.  
-It lets users sign up, upload files or create folders, track quota, and manage favorites—similar to Google Drive’s core workflow, but fully open‑source.
-
-<!-- ![Architecture Diagram](docs/architecture.png)  optional visual -->
+A production‑ready **Node.js + Express 5** backend that delivers secure, quota‑aware cloud storage — think "self‑hosted Google Drive core" — powered by **MongoDB, Firebase Cloud Storage, and JWT sessions**.
 
 ---
 
-## ✨ Key Features
+## Table of Contents
 
-| Area                  | Highlights                                                       | Real‑life benefit                                 |
-| --------------------- | ---------------------------------------------------------------- | ------------------------------------------------- |
-| **Authentication**    | Email/OTP signup, JWT sessions, bcrypt‑hashed passwords          | Secure access without third‑party auth vendors    |
-| **User Storage**      | 15 GB free quota, real‑time usage counters                       | Prevents surprises—users always see space left    |
-| **File Uploads**      | Multer → Firebase bucket streaming; signed URLs valid to 2491 🤯 | Cheap CDN‑style delivery without own object store |
-| **Folder Tree**       | Any‑depth parent/child relationship in Mongo                     | Mirrors familiar desktop file explorers           |
-| **Typed Metrics**     | Per‑MIME counts (image/video/pdf/txt/other)                      | Quick dashboards; e.g., “clean up big videos”     |
-| **Favorites & Trash** | Toggle / soft‑delete with timestamps                             | Undo accidents and build “starred” view           |
-| **RESTful API v1**    | `/api/v1/auth • /storage • /directory`                           | Easy front‑end or mobile integration              |
-| **Email Service**     | Nodemailer + Gmail App Password                                  | Production‑ready verification flow                |
-
----
-
-## 🗺️ Project Structure
-
-    ├── index.js # entry point, boots Express
-    ├── src/
-    │ ├── app.js # Express middlewares & versioned routes
-    │ ├── controller/ # Auth, File, Storage logic
-    │ ├── Model/ # Mongoose schemas
-    │ ├── middleware/ # JWT guard, Multer config
-    │ ├── lib/ # Hashing, JWT utils, Mailer
-    │ ├── Routes/ # v1 route groups
-    │ └── utils/ # Reusable helpers & templates
-    └── public/temp/ # temp uploads before Firebase push
+1. [Architecture Overview](#architecture-overview)
+2. [Features](#features)
+3. [Tech Stack](#tech-stack)
+4. [Folder Structure](#folder-structure)
+5. [Getting Started](#getting-started)
+6. [Environment Variables](#environment-variables)
+7. [API Reference](#api-reference)
+8. [Contributing](#contributing)
+9. [License](#license)
 
 ---
 
-## 🚀 Getting Started
+## Architecture Overview
 
-### 1 . Clone & Install
+```
+Client ─▶ REST API (Express) ─▶ Controllers ─▶ Services/Utils ─▶ MongoDB
+                       │
+                       └─▶ Firebase Cloud Storage (files)
+```
+
+- **Stateless JWT auth** guards every route.
+- **Mongoose ODM** models persist users, folders, files, and storage quotas.
+- **Firebase** stores the raw file objects; signed URLs (2491 expiry) enable CDN‑level delivery.
+- **Multer** streams uploads directly to a temp directory before off‑loading to Firebase.
+
+---
+
+## Features
+
+| Category                   | Description                                                                      |
+| -------------------------- | -------------------------------------------------------------------------------- |
+| **Authentication**         | Email+OTP sign‑up, BCrypt passwords, Google OAuth 2.0, refresh‑less JWT sessions |
+| **Granular Storage Quota** | 15 GB free tier with per‑MIME counters (image/video/pdf/txt/other)               |
+| **Full File Tree**         | Unlimited depth, root folder created at user onboarding                          |
+| **Favorites & Trash**      | Soft‑delete with timestamps, one‑click starring                                  |
+| **Typed Metrics**          | `/storage/summary` returns storage + item counts, enabling dashboards            |
+| **Extensible REST API**    | Versioned under `/api/v1/*`, ready for mobile or SPA clients                     |
+| **Email Service**          | Nodemailer + Gmail App Password for OTP and password‑reset flows                 |
+
+---
+
+## Tech Stack
+
+- **Runtime:** Node.js 20 LTS
+- **Framework:** Express 5.x
+- **Database:** MongoDB (Mongoose 8.x)
+- **Object Storage:** Firebase Cloud Storage
+- **Auth & Security:** JSON Web Tokens, bcrypt, Passport Google OAuth
+- **Utilities:** Multer, UUID, Dotenv, Nodemailer
+
+---
+
+## Folder Structure
+
+```
+root
+├── index.js              # boots server & DB
+├── src/
+│   ├── app.js           # Express app instance & middlewares
+│   ├── controller/      # Business logic
+│   ├── Model/           # Mongoose schemas
+│   ├── middleware/      # Auth guards, upload pipe
+│   ├── lib/             # JWT, bcrypt, mailer helpers
+│   ├── Routes/          # Versioned route groups
+│   ├── config/          # Firebase & Passport setup
+│   └── utils/           # Reusable helpers & error classes
+└── docs/ (optional)     # API collections / diagrams
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js ≥ 18
+- MongoDB Atlas URI or local instance
+- Firebase project with a Storage bucket
+
+### Installation
 
 ```bash
 git clone https://github.com/naimdotcom/storage-management-system.git
@@ -47,62 +93,61 @@ cd storage-management-system
 npm install
 ```
 
-2 . Environment Variables
+### Run Locally
 
-Create .env in the root:
+```bash
+# development (nodemon)
+npm run dev
 
-```.env
+# production
+npm start
+```
+
+Default server: `http://localhost:4000` (change via `PORT` env).
+
+---
+
+## Environment Variables
+
+Create a `.env` file at project root:
+
+```
 PORT=4000
-MONGODB_URL=mongodb+srv://<user>:<pass>@cluster0.mongodb.net/sms
+# Mongo
+MONGODB_URL=mongodb+srv://<user>:<pass>@cluster.mongodb.net/sms
+# Auth
 JWT_SECRET=superSecretJWT
+SESSION_SECRET=sessionSecret
 SALT=10
-# Gmail
+# Gmail for Nodemailer
 HOST_MAIL=youremail@gmail.com
 APP_PASSWORD=xxxx xxxx xxxx xxxx
 # Firebase
 STORAGE_BUCKET=your-bucket.appspot.com
-
+GOOGLE_CLIENT_ID=<oauth-id>
+GOOGLE_CLIENT_SECRET=<oauth-secret>
 ```
 
-Tip: The Firebase service‑account JSON referenced in src/config/firebase.js should live next to that file and be git‑ignored.
-
-3 . Run Locally
-
-```bash
-npm run dev   # nodemon
-
-# or
-npm start
-
-Server listens on http://localhost:4000.
-```
+The Firebase service‑account JSON must be placed in `src/config/` and git‑ignored.
 
 ---
 
-🛠️ API Reference (excerpt)
+## API Reference (excerpt)
 
-| Method | Endpoint                                     | Purpose                        |
-| ------ | -------------------------------------------- | ------------------------------ |
-| POST   | /api/v1/auth/signup                          | Create user & root folder      |
-| POST   | /api/v1/auth/login                           | JWT + cookie login             |
-| POST   | /api/v1/auth/verify-otp                      | Finalize email verification    |
-| GET    | /api/v1/storage/summary                      | Storage quota & type breakdown |
-| POST   | /api/v1/directory/folder/:id                 | Create sub‑folder inside id    |
-| POST   | /api/v1/directory/upload/:id                 | Upload file into folder id     |
-| GET    | /api/v1/directory/:id                        | Details of file/folder         |
-| PATCH  | /api/v1/directory/favorite/:id?favorite=true | Toggle star                    |
-| DELETE | /api/v1/directory/:id                        | Soft‑delete file/folder        |
-
-Full route list lives in src/Routes.
+| Method                                        | Endpoint                                       | Description                   |
+| --------------------------------------------- | ---------------------------------------------- | ----------------------------- |
+| POST                                          | `/api/v1/auth/signup`                          | Register + create root folder |
+| POST                                          | `/api/v1/auth/login`                           | Obtain JWT cookie/token       |
+| POST                                          | `/api/v1/auth/verify-otp`                      | Finalize email verification   |
+| GET                                           | `/api/v1/storage/summary`                      | User quota & MIME breakdown   |
+| POST                                          | `/api/v1/directory/folder/:id`                 | Create sub‑folder             |
+| POST                                          | `/api/v1/directory/upload/:id`                 | Upload file into folder       |
+| PATCH                                         | `/api/v1/directory/favorite/:id?favorite=true` | Toggle star                   |
+| DELETE                                        | `/api/v1/directory/:id`                        | Soft‑delete file/folder       |
+| Full route definitions live in `src/Routes/`. |                                                |                               |
 
 ---
 
-🧪 Testing ideas
-• Postman collection can be found under docs/.
-• Spin up Mongo Memory Server for fast unit tests of controllers.
+## License
 
----
-
-📝 License
-
-This project is licensed under the MIT License—see LICENSE file for details.
+Distributed under the **MIT License**. See `LICENSE` for more information.
