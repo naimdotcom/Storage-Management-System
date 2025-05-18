@@ -24,7 +24,7 @@ const fileSchema = new Schema(
       index: true,
       default: null,
       required: function () {
-        return !this.isRoot;
+        return !this.isRootFolder;
       },
     },
     isFavorite: {

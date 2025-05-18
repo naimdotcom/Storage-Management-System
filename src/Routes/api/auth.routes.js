@@ -10,6 +10,8 @@ const {
 } = require("../../controller/auth.controller");
 const passport = require("../../config/passport");
 const { verifyAuth } = require("../../middleware/auth.middleware");
+const { generateToken } = require("../../lib/Jwt");
+const ApiResponse = require("../../utils/ApiResponse");
 const _ = express.Router();
 
 _.route("/signup").post(signup);

@@ -1,6 +1,9 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const User = require("../Model/user.model");
+const Storage = require("../Model/storage.model");
+const { File } = require("../Model/file.model");
+const ApiError = require("../utils/ApiError");
 
 passport.use(
   new GoogleStrategy(
@@ -20,12 +23,13 @@ passport.use(
         // 2️⃣ If not found, create one (auto‑verify email)
         if (!user) {
           user = await User.create({
-            username: profile.displayName.replace(/\s+/g, "_"),
+            username: profile.displayName
+              ? profile.displayName
+              : profile.emails[0].value,
             email: profile.emails[0].value,
             googleId: profile.id,
             isVerified: true,
             termsAndConditions: true, // optionally show T&C on first login
-            password: null, // no local password yet
           });
 
           // 💾 ALSO: create storage + root folder like your signup flow
@@ -37,9 +41,8 @@ passport.use(
             ownerId: user._id,
             name: "root",
             size: 0,
-            type: "folder",
-            parentId: null,
             isRootFolder: true,
+            type: "folder",
             mimeType: "folder",
           });
           if (!createStorageForUser || !createRootFolder) {
