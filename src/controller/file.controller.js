@@ -47,7 +47,7 @@ exports.uploadFile = async (req, res) => {
 
     await getFolderOr404(parentId);
 
-    const destination = `user_files/${user.id || "unknown"}/${file.filename}`;
+    const destination = `user_files/${user.id}/${file.filename}`;
     await bucket.upload(file.path, {
       destination,
       metadata: { contentType: file.mimetype },

@@ -378,6 +378,39 @@ const renameUserName = async (req, res) => {
   }
 };
 
+const deleteAccount = async (req, res) => {
+  try {
+    const user = req.user;
+    const userFound = await User.findById(user.id);
+    if (!userFound) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "User not found", { success: false }));
+    }
+
+    const userStorage = await Storage.findOne({ user: user.id });
+    if (userStorage) {
+      await Storage.findByIdAndDelete(userStorage.id);
+    }
+
+    await deleteAllUserFiles(user.id);
+
+    await Promise.all([
+      Storage.deleteOne({ userId: user.id }), // fixed field name
+      File.deleteMany({ ownerId: user.id }),
+      User.findByIdAndDelete(user.id),
+    ]);
+    return res.status(200).json(
+      new ApiResponse(200, "User deleted successfully", {
+        success: true,
+      })
+    );
+  } catch (error) {
+    console.log("error from userAuth", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 module.exports = {
   signup,
   login,
@@ -387,4 +420,5 @@ module.exports = {
   resetPassword,
   userAuth,
   renameUserName,
+  deleteAccount,
 };
