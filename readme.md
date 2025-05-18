@@ -161,7 +161,7 @@ src/config/firebase-adminsdk.json
 | POST                                          | `/api/v1/directory/upload/:id`                 | Upload file into folder       |
 | PATCH                                         | `/api/v1/directory/favorite/:id?favorite=true` | Toggle star                   |
 | DELETE                                        | `/api/v1/directory/:id`                        | Soft‑delete file/folder       |
-| Full route definitions live in `src/Routes/`. |                                                |                               |
+| Full route definitions live in.               | `src/Routes/`                                        |                               |
 
 ---
 
