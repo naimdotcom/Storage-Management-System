@@ -362,26 +362,38 @@ const getMimeTypeFiles = async (req, res) => {
   }
 };
 
-const addToFavoriteFileOrFolder = async (req, res) => {
+const updateFavoriteFileOrFolder = async (req, res) => {
   try {
     const { id } = req.params;
+    const user = req.user;
+    const { favorite } = req.query;
 
     if (!id) {
       return res.status(400).json(new ApiError(400, "Please enter fileId"));
     }
 
-    const fileOrFolder = await File.findOneAndUpdate(
+    if (favorite == undefined || (favorite != "true" && favorite != "false")) {
+      return res
+        .status(400)
+        .json(
+          new ApiError(400, "Please enter valid favorite", { success: false })
+        );
+    }
+
+    let fileOrFolder = await File.findOneAndUpdate(
       {
+        ownerId: user.id,
         _id: id,
         isDeleted: false,
       },
       {
-        isFavorite: true,
+        isFavorite: favorite,
       },
       {
         new: true,
       }
     );
+
     if (!fileOrFolder) {
       return res.status(400).json(new ApiError(400, "File not found"));
     }
@@ -407,5 +419,5 @@ module.exports = {
   getFolderFiles,
   getFileOrFolder,
   getMimeTypeFiles,
-  addToFavoriteFileOrFolder,
+  updateFavoriteFileOrFolder,
 };
