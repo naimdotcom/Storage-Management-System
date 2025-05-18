@@ -6,6 +6,6 @@ const fileRoute = require("./api/file.routes");
 
 _.use("/auth", authRoute);
 _.use("/storage", storageRoute);
-_.use("/file", fileRoute);
+_.use("/directory", fileRoute);
 
 module.exports = _;

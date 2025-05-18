@@ -12,6 +12,7 @@ const fileSchema = new Schema(
       type: String,
       required: true,
       enum: ["file", "folder"],
+      index: true,
     },
     name: {
       type: String,
@@ -29,6 +30,7 @@ const fileSchema = new Schema(
     mimeType: {
       type: String,
       required: true,
+      index: true,
     },
     size: {
       type: Number,
@@ -42,6 +44,7 @@ const fileSchema = new Schema(
     isDeleted: {
       type: Boolean,
       default: false,
+      index: true,
     },
     deletedAt: {
       type: Date,

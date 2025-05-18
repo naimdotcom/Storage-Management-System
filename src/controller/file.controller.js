@@ -108,7 +108,8 @@ const uploadFile = async (req, res) => {
 
 const createFolder = async (req, res) => {
   try {
-    const { parentId, fileName } = req.body;
+    const { name } = req.body;
+    const { id: parentId } = req.params;
     console.log("parentId", parentId, req.body);
     const user = req.user;
     if (!parentId) {
@@ -127,7 +128,7 @@ const createFolder = async (req, res) => {
 
     const folderCreated = await File.create({
       ownerId: user.id,
-      name: fileName ? fileName : "New Folder",
+      name: name ? name : "New Folder",
       type: "folder",
       parentId: parentId,
       mimeType: "folder",
@@ -161,16 +162,16 @@ const getFolderFiles = async (req, res) => {
       return res.status(400).json(new ApiError(400, "Please enter parentId"));
     }
 
-    const isFolderExist = await File.findById(id);
-    if (!isFolderExist)
+    const folder = await File.findById(id);
+    if (!folder)
       return res
         .status(400)
         .json(new ApiError(400, "Folder not found", { success: false }));
-    if (isFolderExist.isDeleted)
+    if (folder.isDeleted)
       return res
         .status(400)
         .json(new ApiError(400, "Folder deleted", { success: false }));
-    if (isFolderExist.type !== "folder")
+    if (folder.type !== "folder")
       return res
         .status(400)
         .json(new ApiError(400, "Not a folder", { success: false }));
@@ -184,6 +185,7 @@ const getFolderFiles = async (req, res) => {
     return res.status(200).json(
       new ApiResponse(200, "Files found", {
         success: true,
+        folder: folder,
         files: files,
       })
     );
@@ -193,7 +195,7 @@ const getFolderFiles = async (req, res) => {
   }
 };
 
-const getFile = async (req, res) => {
+const getFileOrFolder = async (req, res) => {
   try {
     const { id } = req.params;
     const user = req.user;
@@ -202,19 +204,20 @@ const getFile = async (req, res) => {
       return res.status(400).json(new ApiError(400, "Please enter fileId"));
     }
 
-    const file = await File.findOne({
+    const fileOrFolder = await File.findOne({
       ownerId: user.id,
       _id: id,
       isDeleted: false,
     });
-    if (!file) {
+    if (!fileOrFolder) {
       return res.status(400).json(new ApiError(400, "File not found"));
     }
 
     return res.status(200).json(
       new ApiResponse(200, "File found", {
         success: true,
-        file: file,
+        ...(fileOrFolder.type == "folder" && { folder: fileOrFolder }),
+        ...(fileOrFolder.type == "file" && { file: fileOrFolder }),
       })
     );
   } catch (error) {
@@ -232,7 +235,7 @@ const deleteFileOrFolder = async (req, res) => {
       return res.status(400).json(new ApiError(400, "Please enter fileId"));
     }
 
-    const file = await File.findOneAndUpdate(
+    const fileOrFolder = await File.findOneAndUpdate(
       {
         ownerId: user.id,
         _id: id,
@@ -246,14 +249,15 @@ const deleteFileOrFolder = async (req, res) => {
         new: true,
       }
     );
-    if (!file) {
+    if (!fileOrFolder) {
       return res.status(400).json(new ApiError(400, "File not found"));
     }
 
     return res.status(200).json(
       new ApiResponse(200, "File deleted", {
         success: true,
-        file: file,
+        ...(fileOrFolder.type == "folder" && { folder: fileOrFolder }),
+        ...(fileOrFolder.type == "file" && { file: fileOrFolder }),
       })
     );
   } catch (error) {
@@ -275,7 +279,7 @@ const renameFileOrFolder = async (req, res) => {
       return res.status(400).json(new ApiError(400, "Please enter name"));
     }
 
-    const file = await File.findOneAndUpdate(
+    const fileOrFolder = await File.findOneAndUpdate(
       {
         ownerId: user.id,
         _id: id,
@@ -288,18 +292,72 @@ const renameFileOrFolder = async (req, res) => {
         new: true,
       }
     );
-    if (!file) {
+    if (!fileOrFolder) {
       return res.status(400).json(new ApiError(400, "File not found"));
     }
 
     return res.status(200).json(
       new ApiResponse(200, "File renamed", {
         success: true,
-        file: file,
+        ...(fileOrFolder.type == "folder" && { folder: fileOrFolder }),
+        ...(fileOrFolder.type == "file" && { file: fileOrFolder }),
       })
     );
   } catch (error) {
     console.log("error from renameFile", error);
+    res.status(500).json(new ApiResponse(500, "Internal Server Error"));
+  }
+};
+
+const getMimeTypeFiles = async (req, res) => {
+  try {
+    const { mime } = req.query;
+    const user = req.user;
+
+    if (!mime) {
+      return res.status(400).json(new ApiError(400, "Please enter mime"));
+    }
+
+    let mimeRegex;
+    switch (mime.toLowerCase()) {
+      case "image":
+        mimeRegex = /^image\//i;
+        break;
+      case "video":
+        mimeRegex = /^video\//i;
+        break;
+      case "pdf":
+        mimeRegex = /^application\/pdf$/i;
+        break;
+      case "txt":
+      case "note":
+        mimeRegex = /^text\/plain$/i;
+        break;
+      default:
+        return res
+          .status(400)
+          .json(new ApiError(400, "Unsupported mime filter"));
+    }
+
+    const files = await File.find({
+      ownerId: user.id,
+      type: "file",
+      mimeType: { $regex: mimeRegex },
+      isDeleted: false,
+    }).select("-__v");
+
+    if (!files.length) {
+      return res.status(400).json(new ApiError(400, "No files found"));
+    }
+
+    return res.status(200).json(
+      new ApiResponse(200, "Files found", {
+        success: true,
+        files: files,
+      })
+    );
+  } catch (error) {
+    console.log("error from getMimeTypeFiles", error);
     res.status(500).json(new ApiResponse(500, "Internal Server Error"));
   }
 };
@@ -310,5 +368,6 @@ module.exports = {
   deleteFileOrFolder,
   renameFileOrFolder,
   getFolderFiles,
-  getFile,
+  getFileOrFolder,
+  getMimeTypeFiles,
 };
