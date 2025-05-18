@@ -12,9 +12,10 @@ A production‑ready **Node.js + Express 5** backend that delivers secure, quota
 4. [Folder Structure](#folder-structure)
 5. [Getting Started](#getting-started)
 6. [Environment Variables](#environment-variables)
-7. [API Reference](#api-reference)
-8. [Contributing](#contributing)
-9. [License](#license)
+7. [Getting firebase‑adminsdk.json](#getting-firebase-adminsdkjson)
+8. [API Reference](#api-reference)
+9. [Contributing](#contributing)
+10. [License](#license)
 
 ---
 
@@ -128,7 +129,23 @@ GOOGLE_CLIENT_ID=<oauth-id>
 GOOGLE_CLIENT_SECRET=<oauth-secret>
 ```
 
-The Firebase service‑account JSON must be placed in `src/config/` and git‑ignored.
+---
+
+## Getting firebase‑adminsdk.json
+
+Firebase uses a service‑account key to let your backend upload / sign files without user interaction.
+Follow these steps to generate it:
+
+1. Open Firebase Console → Project Settings (⚙️ icon beside “Project Overview”).
+2. Select “Service accounts” tab.
+3. Click “Generate new private key” → Generate key → a JSON file downloads.
+4. Rename the file (optional) to match the import in src/config/firebase.js
+
+mv path/to/downloaded-key.json \
+src/config/firebase-adminsdk.json
+
+5. Keep it out of git – it’s already in .gitignore.
+6. Make sure STORAGE_BUCKET=<your‑bucket>.appspot.com is present in .env.
 
 ---
 

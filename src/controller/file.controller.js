@@ -231,6 +231,7 @@ exports.getMimeTypeFiles = async (req, res) => {
       type: "file",
       mimeType: { $regex: regex },
       isDeleted: false,
+      isRootFolder: false,
     }).select("-__v");
 
     if (!files.length) throw new ApiError(404, "No files found");
@@ -289,6 +290,7 @@ exports.getFileOrFolderByDate = async (req, res) => {
       ownerId: user.id,
       createdAt: { $gte: start, $lte: end },
       isDeleted: false,
+      isRootFolder: false,
     };
     if (type) filter.type = type;
     if (mime === "image") filter.mimeType = { $regex: /^image\//i };

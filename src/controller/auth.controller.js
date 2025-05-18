@@ -358,6 +358,12 @@ const renameUserName = async (req, res) => {
   try {
     const { username } = req.body;
     const user = req.user;
+    const isUserNameExist = await User.findOne({ username: username });
+    if (isUserNameExist) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "Username already exist", { success: false }));
+    }
     const userFound = await User.findById(user.id);
     if (!userFound) {
       return res
