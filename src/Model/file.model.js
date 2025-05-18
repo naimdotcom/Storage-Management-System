@@ -27,6 +27,11 @@ const fileSchema = new Schema(
         return !this.isRoot;
       },
     },
+    isFavorite: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     mimeType: {
       type: String,
       required: true,

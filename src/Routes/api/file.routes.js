@@ -8,6 +8,7 @@ const {
   deleteFileOrFolder,
   renameFileOrFolder,
   getMimeTypeFiles,
+  addToFavoriteFileOrFolder,
 } = require("../../controller/file.controller");
 const upload = require("../../middleware/multer.middleware");
 const _ = express.Router();
@@ -17,7 +18,8 @@ _.route("/").get(verifyAuth, getMimeTypeFiles);
 _.route("/:id")
   .get(verifyAuth, getFileOrFolder)
   .delete(verifyAuth, deleteFileOrFolder)
-  .patch(verifyAuth, renameFileOrFolder);
+  .patch(verifyAuth, renameFileOrFolder)
+  .put(verifyAuth, addToFavoriteFileOrFolder);
 
 _.route("/:id/children").get(verifyAuth, getFolderFiles);
 
