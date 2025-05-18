@@ -26,6 +26,7 @@ passport.use(
             username: profile.displayName
               ? profile.displayName
               : profile.emails[0].value,
+            profilePicture: profile.photos[0].value,
             email: profile.emails[0].value,
             googleId: profile.id,
             isVerified: true,

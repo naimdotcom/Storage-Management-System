@@ -7,6 +7,7 @@ const {
   resetPassword,
   resendOtp,
   userAuth,
+  renameUserName,
 } = require("../../controller/auth.controller");
 const passport = require("../../config/passport");
 const { verifyAuth } = require("../../middleware/auth.middleware");
@@ -21,6 +22,7 @@ _.route("/resend-otp").get(verifyAuth, resendOtp);
 _.route("/forgot-password").post(verifyAuth, forgotPassword);
 _.route("/reset-password").post(verifyAuth, resetPassword);
 _.route("/user").get(verifyAuth, userAuth);
+post(verifyAuth, renameUserName);
 
 // Google OAuth
 _.route("/google").get(passport.authenticate("google", { scope: ["email"] }));
