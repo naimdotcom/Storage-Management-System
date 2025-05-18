@@ -8,8 +8,8 @@ const {
   deleteFileOrFolder,
   renameFileOrFolder,
   getMimeTypeFiles,
-  addToFavoriteFileOrFolder,
   updateFavoriteFileOrFolder,
+  getFileOrFolderByDate,
 } = require("../../controller/file.controller");
 const upload = require("../../middleware/multer.middleware");
 const _ = express.Router();
@@ -27,5 +27,7 @@ _.route("/:id/children").get(verifyAuth, getFolderFiles);
 _.route("/:id/folders").post(verifyAuth, createFolder);
 
 _.route("/:id/upload").post(verifyAuth, upload.single("file"), uploadFile);
+
+_.route("/date/:date").get(verifyAuth, getFileOrFolderByDate);
 
 module.exports = _;

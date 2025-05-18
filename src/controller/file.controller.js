@@ -411,6 +411,47 @@ const updateFavoriteFileOrFolder = async (req, res) => {
   }
 };
 
+const getFileOrFolderByDate = async (req, res) => {
+  try {
+    const date = req.params.date; // YYYY-MM-DD or isoDate
+    const user = req.user;
+
+    const dayStart = new Date(`${date}T00:00:00.000Z`);
+    if (isNaN(dayStart.getTime()))
+      return res
+        .status(400)
+        .json(new ApiError(400, "Invalid date format (YYYY-MM-DD)"));
+    const dayEnd = new Date(`${date}T23:59:59.999Z`);
+
+    const { type, mime } = req.query; // ?type=file&mime=image
+    const extraFilter = {};
+    if (type) extraFilter.type = type; // "file" | "folder"
+    if (mime === "image") extraFilter.mimeType = { $regex: /^image\//i };
+    if (mime === "video") extraFilter.mimeType = { $regex: /^video\//i };
+    if (mime === "pdf") extraFilter.mimeType = "application/pdf";
+    if (mime === "txt") extraFilter.mimeType = "text/plain";
+
+    const files = await File.find({
+      ownerId: user.id,
+      createdAt: { $gte: dayStart, $lte: dayEnd },
+      ...extraFilter,
+      isDeleted: false,
+    })
+      .sort({ createdAt: 1 })
+      .select("-__v");
+
+    return res.status(200).json(
+      new ApiResponse(200, "Files found", {
+        success: true,
+        files: files,
+      })
+    );
+  } catch (error) {
+    console.log("error from getFileOrFolderByDate", error);
+    res.status(500).json(new ApiResponse(500, "Internal Server Error"));
+  }
+};
+
 module.exports = {
   uploadFile,
   createFolder,
@@ -420,4 +461,5 @@ module.exports = {
   getFileOrFolder,
   getMimeTypeFiles,
   updateFavoriteFileOrFolder,
+  getFileOrFolderByDate,
 };
